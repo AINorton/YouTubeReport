@@ -1,0 +1,23 @@
+# Per-report uploaded CSVs
+alamo_production_renderer/input_reports/*/
+!alamo_production_renderer/input_reports/README.md
+
+# Generated report outputs
+alamo_production_renderer/output/*/
+!alamo_production_renderer/output/README.md
+
+# Downloaded local fonts
+alamo_production_renderer/fonts/*.ttf
+
+# Python/cache files
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
