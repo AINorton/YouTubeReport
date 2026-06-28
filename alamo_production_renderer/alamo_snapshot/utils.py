@@ -88,15 +88,15 @@ def format_header_range(date_range: str) -> str:
         return date_range
 
 
-def format_generated_date(date_range: str) -> str:
-    parts = [p.strip().strip('"') for p in date_range.split("-")]
-    if len(parts) < 2:
-        return datetime.now().strftime("%B %-d, %Y") if hasattr(datetime.now(), "strftime") else ""
-    try:
-        end = datetime.strptime(parts[1], "%B %d, %Y")
-        return f"{end.strftime('%B')} {end.day}, {end.year}"
-    except Exception:
-        return parts[-1]
+def format_generated_date(date_range: str = "") -> str:
+    """Return the actual date the report is generated.
+
+    The footer "Report Generated" date is an operational timestamp, not the
+    campaign/data date range. The date_range argument is accepted only to keep
+    existing call sites compatible.
+    """
+    today = datetime.now()
+    return f"{today.strftime('%B')} {today.day}, {today.year}"
 
 
 def resolve_font_path(style: str) -> Path:
