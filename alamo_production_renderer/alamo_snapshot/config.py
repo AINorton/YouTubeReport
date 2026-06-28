@@ -15,7 +15,7 @@ COLORS = {
     "dark_green": (61, 85, 57),
     "cream": (234, 227, 214),
     "row_alt": (218, 210, 194),
-    "map_bg": (122, 138, 116),
+    "map_bg": (197, 192, 174),
     "text_green": (47, 84, 50),
     "text_cream": (238, 232, 212),
     "muted": (106, 124, 92),
@@ -63,7 +63,7 @@ BOXES = {
     },
     "geo_state_text": (1128, 356),
     "map_inner": (835, 413, 683, 1044),
-    "map_plot": (855, 450, 638, 880),
+    "map_plot": (835, 413, 683, 1044),
     "top_zips": (860, 1469),
     "device_chart": (62, 1586, 465, 350),
     "demo_chart": (552, 1586, 465, 350),
@@ -138,9 +138,10 @@ MAP_CONFIG = {
     "map_height": BOXES["map_plot"][3],
 
     # Viewport/crop behavior.
-    "padding_percent": 0.25,
-    "min_padding_miles": 20,
-    "max_padding_miles": 90,
+    # Tighter crop so active ZIPs occupy more of the geographic panel.
+    "padding_percent": 0.08,
+    "min_padding_miles": 5,
+    "max_padding_miles": 35,
     "spread_full_state_threshold_miles": 250,
 
     # GeoJSON property names. The uploaded Texas file uses ZCTA5CE10.
@@ -158,8 +159,10 @@ MAP_CONFIG = {
 
     # Styling must stay close to the Base True image.
     "background_zip_fill": "#c7c0ad",
-    "background_zip_outline": "#b5ae9e",
-    "highlight_outline": "#e9ead2",
+    "background_zip_outline": "#8f887a",
+    "highlight_outline": "#182418",
+    "background_zip_outline_width": 1,
+    "highlight_outline_width": 2,
     "highlight_palette": [
         "#eef8cf",
         "#c9ec9b",
@@ -168,7 +171,7 @@ MAP_CONFIG = {
         "#006b3b",
         "#00482f",
     ],
-    "map_background": "#7a8a74",
+    "map_background": "#c7c0ad",
 }
 
 DEFAULT_TEMPLATE = Path("templates") / "Alamo Intelligence Snapshot Base True (1).png"

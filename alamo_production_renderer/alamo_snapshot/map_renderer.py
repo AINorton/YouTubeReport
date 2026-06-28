@@ -232,7 +232,12 @@ def render_cropped_zip_map(
         rings = geometry_to_pixel_rings(features_by_zip[z]["geometry"], viewport, width, height)
         for ring in rings:
             if len(ring) >= 3:
-                draw.polygon(ring, fill=config["background_zip_fill"], outline=config["background_zip_outline"])
+                draw.polygon(
+                    ring,
+                    fill=config["background_zip_fill"],
+                    outline=config["background_zip_outline"],
+                    width=int(config.get("background_zip_outline_width", 1)),
+                )
 
     values = [normalized_impressions[z] for z in matched_zips]
     min_value = min(values)
@@ -245,7 +250,12 @@ def render_cropped_zip_map(
         rings = geometry_to_pixel_rings(features_by_zip[z]["geometry"], viewport, width, height)
         for ring in rings:
             if len(ring) >= 3:
-                draw.polygon(ring, fill=fill, outline=config["highlight_outline"])
+                draw.polygon(
+                    ring,
+                    fill=fill,
+                    outline=config["highlight_outline"],
+                    width=int(config.get("highlight_outline_width", 1)),
+                )
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
