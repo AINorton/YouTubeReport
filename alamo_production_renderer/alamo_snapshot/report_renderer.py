@@ -22,7 +22,7 @@ except Exception:  # pragma: no cover
 from .charts import render_demographics_chart, render_device_chart, render_time_chart
 from .config import BOXES, COLORS, MAP_CONFIG, PAGE_HEIGHT, PAGE_WIDTH
 from .data_parser import SnapshotData, find_state_geojson
-from .map_renderer import render_cropped_zip_map
+from .map_renderer import render_cropped_zip_map, render_state_context_map
 from .utils import fmt_freq, fmt_int, fmt_money, font, trim_text_to_width, validate_required_fonts
 from .validation import validate_static_regions
 
@@ -121,20 +121,33 @@ def render_snapshot(
     state_geojson_path = find_state_geojson(data.state_abbr, geo_dir)
     if map_output is None:
         map_output = output_png.parent / "generated_map.png"
-    map_result = render_cropped_zip_map(
-        zip_impressions=data.zip_impressions,
-        state_geojson_path=state_geojson_path,
-        output_path=map_output,
-        config=MAP_CONFIG,
-    )
+    if data.zip_impressions:
+        map_result = render_cropped_zip_map(
+            zip_impressions=data.zip_impressions,
+            state_geojson_path=state_geojson_path,
+            output_path=map_output,
+            config=MAP_CONFIG,
+        )
+    else:
+        map_result = render_state_context_map(
+            state_geojson_path=state_geojson_path,
+            output_path=map_output,
+            config=MAP_CONFIG,
+        )
     map_img = Image.open(map_output).convert("RGBA")
     mx, my, mw, mh = BOXES["map_plot"]
     if map_img.size != (mw, mh):
         map_img = map_img.resize((mw, mh), Image.Resampling.LANCZOS)
     paste_rgba(base, map_img, mx, my)
 
-    # Top ZIPs line.
-    top_zips_text = "  •  Top ZIPs:    " + ", ".join(f"{z} ({fmt_int(v)})" for z, v in data.top_zips)
+    # Top geographic summary line. For ZIP-targeted reports this remains Top ZIPs;
+    # for broad congressional/county/state targeting, show the matched geo label
+    # instead of blocking the report or pretending ZIP data exists.
+    if data.top_zips:
+        geo_items = ", ".join(f"{z} ({fmt_int(v)})" for z, v in data.top_zips)
+    else:
+        geo_items = "No ZIP-level location data"
+    top_zips_text = f"  •  {data.geo_summary_label}:    {geo_items}"
     draw.text(BOXES["top_zips"], top_zips_text, fill=COLORS["text_green"], font=font("bold", 16))
 
     # Bottom charts.
@@ -212,6 +225,7 @@ def write_validation_report(result: dict, output_txt: Path) -> None:
         f"- Missing ZIPs: {', '.join(map_result.get('missing_zips') or [])}",
         f"- Visible surrounding ZIPs: {map_result.get('visible_background_zips')}",
         f"- Highlighted ZIPs: {map_result.get('highlighted_zips')}",
+        f"- Map note: {map_result.get('map_note', '')}",
         "",
         "Output:",
         f"- PNG: {result.get('output_png')}",

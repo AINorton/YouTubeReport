@@ -274,3 +274,79 @@ def render_cropped_zip_map(
         "visible_background_zips": len(visible_zips),
         "highlighted_zips": len(matched_zips),
     }
+
+
+def render_state_context_map(
+    state_geojson_path: str | Path,
+    output_path: str | Path,
+    config: dict,
+) -> dict:
+    """Render a non-ZIP fallback map for broad geo targeting.
+
+    Congressional-district, county, and state targeting exports may not include
+    ZIP-level matched locations. Without separate congressional/county boundary
+    geometry, the safest behavior is to render the state ZIP/ZCTA basemap as
+    context and avoid falsely highlighting ZIPs that were not present in the
+    source data.
+    """
+    geo = load_json(state_geojson_path)
+    width = int(config["map_width"])
+    height = int(config["map_height"])
+    target_aspect = width / height
+
+    features_by_zip: Dict[str, dict] = {}
+    feature_bounds: Dict[str, Bounds] = {}
+
+    for feature in geo.get("features", []):
+        z = get_feature_zip(feature, config["zip_property_candidates"])
+        if not z:
+            continue
+        geometry = feature.get("geometry")
+        if not geometry:
+            continue
+        try:
+            b = geometry_bounds(geometry)
+        except Exception:
+            continue
+        features_by_zip[z] = feature
+        feature_bounds[z] = b
+
+    if not feature_bounds:
+        raise ValueError("Selected state GeoJSON contains no usable ZIP/ZCTA polygons.")
+
+    state_bounds = combine_bounds(list(feature_bounds.values()))
+    viewport = expand_to_aspect_ratio(state_bounds, target_aspect)
+    visible_zips = [z for z, b in feature_bounds.items() if bounds_intersect(b, viewport)]
+
+    img = Image.new("RGB", (width, height), config["map_background"])
+    draw = ImageDraw.Draw(img)
+
+    for z in visible_zips:
+        rings = geometry_to_pixel_rings(features_by_zip[z]["geometry"], viewport, width, height)
+        for ring in rings:
+            if len(ring) >= 3:
+                draw.polygon(
+                    ring,
+                    fill=config["background_zip_fill"],
+                    outline=config["background_zip_outline"],
+                    width=int(config.get("background_zip_outline_width", 1)),
+                )
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(output_path)
+
+    return {
+        "map_output": str(output_path),
+        "state_geojson": str(state_geojson_path),
+        "viewport_mode": "state_context_no_zip_data",
+        "viewport_bounds": viewport,
+        "data_bounds": state_bounds,
+        "spread_miles": 0.0,
+        "data_zips_received": 0,
+        "matched_zips": 0,
+        "missing_zips": [],
+        "visible_background_zips": len(visible_zips),
+        "highlighted_zips": 0,
+        "map_note": "No ZIP-level matched-location data was available; rendered state context map only.",
+    }
